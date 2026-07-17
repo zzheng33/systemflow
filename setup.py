@@ -1,0 +1,18 @@
+"""
+Copyright 2025, UChicago Argonne LLC. 
+Please refer to 'license' in the root directory for details and disclosures.
+"""
+
+from setuptools import setup, find_packages
+
+setup(
+    name='systemflow',
+    version='0.1.0',
+    description='Modeling dependencies and effects in scientific data processing systems',
+    author='Wilkie Olin-Ammentorp',
+    author_email='wolinammentorp@anl.gov',
+    packages=find_packages(include=['systemflow', 'systemflow.*']),
+    package_data={'systemflow': ['xrs_model_data/**/*.csv']},
+    include_package_data=True,
+    # install_requires=[],  # Leave empty if conda handles dependencies
+)
