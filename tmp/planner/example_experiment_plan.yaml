@@ -1,0 +1,166 @@
+plan:
+  plan_id: "xrs_ptychography_pilot_001"
+  plan_name: "XRS ptychography backend pilot"
+  created_by: "experiment_planner_agent"
+  created_at: "2026-07-20"
+  description: "Pilot benchmark plan for comparing two XRS reconstruction workloads. This is an example application profile, not a generic planner requirement."
+
+application:
+  profile_name: "xrs_ptychography"
+  domain: "xray_science"
+  application_name: "ptychography_reconstruction"
+  version: "0.1"
+  profile_notes: "PtychoPINN and Pty-chi are example workloads under this application profile."
+
+study:
+  objective: "Compare learned inference and iterative solver reconstruction resource usage on selected accelerators."
+  comparison_type: "workload_comparison"
+  hypothesis: "The learned inference workload will have lower latency and energy per image than the iterative solver workload for the same synthetic dataset sizes."
+  success_criteria:
+    - "Collect latency and power traces for all approved pilot runs."
+    - "Fit at least one latency model and one power model per enabled workload."
+    - "Produce a SystemFlow-compatible coefficient table after human approval."
+
+workloads:
+  - workload_id: "learned_reconstruction"
+    workload_type: "scientific_ai_inference"
+    enabled: true
+    command_template_id: "xrs_ptychopinn_bs1024"
+    parameters:
+      batch_sizes: [1024]
+      resolutions: [64]
+    expected_outputs:
+      - "bs{batch_size}.log"
+      - "bs{batch_size}_power.csv"
+    notes: "Example workload corresponding to PtychoPINN."
+
+  - workload_id: "iterative_reconstruction"
+    workload_type: "iterative_solver"
+    enabled: true
+    command_template_id: "xrs_ptychi_algorithm_epoch_bs1000"
+    parameters:
+      batch_sizes: [1000]
+      resolutions: [64]
+      algorithms: ["pie", "dm"]
+      epochs: [1, 2, 4]
+      warmup_epochs: [1]
+    expected_outputs:
+      - "e{epochs}_bs{batch_size}.log"
+      - "e{epochs}_bs{batch_size}_power.csv"
+    notes: "Pilot subset of Pty-chi algorithms and epochs."
+
+datasets:
+  - dataset_id: "R1000"
+    dataset_type: "synthetic_size_sweep"
+    size_label: "1000 raw images"
+    path: null
+    synthetic: true
+    parameters:
+      raw_images: 1000
+
+  - dataset_id: "R4000"
+    dataset_type: "synthetic_size_sweep"
+    size_label: "4000 raw images"
+    path: null
+    synthetic: true
+    parameters:
+      raw_images: 4000
+
+  - dataset_id: "R8000"
+    dataset_type: "synthetic_size_sweep"
+    size_label: "8000 raw images"
+    path: null
+    synthetic: true
+    parameters:
+      raw_images: 8000
+
+hardware:
+  targets:
+    - hardware_id: "A100"
+      hardware_type: "gpu"
+      accelerator: "A100"
+      node_constraint: null
+      memory_gb: null
+      notes: null
+
+    - hardware_id: "H200"
+      hardware_type: "gpu"
+      accelerator: "H200"
+      node_constraint: null
+      memory_gb: null
+      notes: null
+
+sweeps:
+  - sweep_id: "dataset_size"
+    applies_to: ["learned_reconstruction", "iterative_reconstruction"]
+    parameter_name: "dataset_id"
+    values: ["R1000", "R4000", "R8000"]
+    default_value: "R1000"
+
+  - sweep_id: "accelerator"
+    applies_to: ["learned_reconstruction", "iterative_reconstruction"]
+    parameter_name: "hardware_id"
+    values: ["A100", "H200"]
+    default_value: "A100"
+
+metrics:
+  - metric_id: "io_latency"
+    metric_type: "latency"
+    required: true
+    source: "log"
+    units: "s"
+
+  - metric_id: "compute_latency"
+    metric_type: "latency"
+    required: true
+    source: "log"
+    units: "s"
+
+  - metric_id: "average_power"
+    metric_type: "power"
+    required: true
+    source: "power_trace"
+    units: "W"
+
+  - metric_id: "energy"
+    metric_type: "energy"
+    required: true
+    source: "derived"
+    units: "J"
+
+  - metric_id: "throughput_per_joule"
+    metric_type: "efficiency"
+    required: true
+    source: "derived"
+    units: "samples/J"
+
+execution:
+  mode: "dry_run"
+  runner: "manual_or_hpc_runner"
+  repetitions: 1
+  random_seeds: []
+  skip_existing: true
+  allow_rerun: false
+  require_power_monitor: true
+  max_total_runs: 100
+  max_walltime_per_run: "02:00:00"
+  estimated_total_runs: 42
+
+outputs:
+  root_dir: "agentic_workflow/runs/xrs_ptychography_pilot_001"
+  manifest_file: "run_manifest.csv"
+  dry_run_matrix_file: "dry_run_matrix.csv"
+  expected_log_patterns:
+    - "{hardware_id}/{dataset_id}/{workload_id}/*.log"
+  expected_power_trace_patterns:
+    - "{hardware_id}/{dataset_id}/{workload_id}/*_power.csv"
+  expected_summary_files:
+    - "validation_summary.md"
+    - "model_fit_summary.md"
+    - "systemflow_validation.md"
+
+approval:
+  status: "pending"
+  approved_by: null
+  approved_at: null
+  notes: null

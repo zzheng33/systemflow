@@ -1,0 +1,148 @@
+# Generic schema outline for Experiment Planner Agent outputs.
+# This is an implementation-oriented contract, not a strict JSON Schema yet.
+
+schema_version: "0.1"
+
+required_top_level_keys:
+  - plan
+  - application
+  - study
+  - workloads
+  - datasets
+  - hardware
+  - sweeps
+  - metrics
+  - execution
+  - outputs
+  - approval
+
+plan:
+  plan_id: string
+  plan_name: string
+  created_by: string
+  created_at: string
+  description: string
+
+application:
+  profile_name: string
+  domain: string
+  application_name: string
+  version: string
+  profile_notes: string
+
+study:
+  objective: string
+  comparison_type:
+    allowed:
+      - single_workload_scaling
+      - workload_comparison
+      - hardware_comparison
+      - parameter_sweep
+      - ablation
+      - calibration
+      - regression_validation
+  hypothesis: string
+  success_criteria:
+    type: list
+
+workloads:
+  type: list
+  item_fields:
+    workload_id: string
+    workload_type: string
+    enabled: boolean
+    command_template_id: string
+    parameters: mapping
+    expected_outputs: list
+    notes: string
+
+datasets:
+  type: list
+  item_fields:
+    dataset_id: string
+    dataset_type: string
+    size_label: string
+    path: string
+    synthetic: boolean
+    parameters: mapping
+
+hardware:
+  targets:
+    type: list
+    item_fields:
+      hardware_id: string
+      hardware_type: string
+      accelerator: string
+      node_constraint: string
+      memory_gb: number
+      notes: string
+
+sweeps:
+  type: list
+  item_fields:
+    sweep_id: string
+    applies_to: list
+    parameter_name: string
+    values: list
+    default_value: any
+
+metrics:
+  type: list
+  item_fields:
+    metric_id: string
+    metric_type: string
+    required: boolean
+    source:
+      allowed:
+        - log
+        - power_trace
+        - profiler
+        - derived
+        - model_fit
+    units: string
+
+execution:
+  mode:
+    allowed:
+      - dry_run
+      - local
+      - hpc
+  runner: string
+  repetitions: integer
+  random_seeds: list
+  skip_existing: boolean
+  allow_rerun: boolean
+  require_power_monitor: boolean
+  max_total_runs: integer
+  max_walltime_per_run: string
+  estimated_total_runs: integer
+
+outputs:
+  root_dir: string
+  manifest_file: string
+  dry_run_matrix_file: string
+  expected_log_patterns: list
+  expected_power_trace_patterns: list
+  expected_summary_files: list
+
+approval:
+  status:
+    allowed:
+      - pending
+      - approved
+      - rejected
+      - needs_revision
+  approved_by: string_or_null
+  approved_at: string_or_null
+  notes: string_or_null
+
+validation_rules:
+  - plan_id must be non-empty
+  - application.profile_name must be non-empty
+  - at least one workload must be enabled
+  - at least one dataset must be defined
+  - at least one hardware target must be defined
+  - execution.mode must default to dry_run
+  - approval.status must default to pending
+  - estimated_total_runs must be computed before approval
+  - runner must not execute if approval.status is not approved
