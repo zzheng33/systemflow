@@ -184,7 +184,7 @@ Valid statuses:
 Recommended files:
 
 ```text
-agentic_workflow/planner/
+agentic/agents/planner/
   planner_design.md
   experiment_plan_schema.yaml
   example_experiment_plan.yaml
@@ -193,7 +193,7 @@ agentic_workflow/planner/
 Later implementation files:
 
 ```text
-agentic_workflow/planner/
+agentic/agents/planner/
   plan_experiments.py
   validate_plan.py
   render_approval_summary.py
